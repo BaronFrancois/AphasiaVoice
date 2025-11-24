@@ -1,0 +1,5 @@
+{
+  "name": "AphasiaVoice",
+  "description": "An accessible communication aid for post-stroke patients featuring high-contrast binary choices, essential needs, and AI-assisted sentence generation.",
+  "requestFramePermissions": []
+}

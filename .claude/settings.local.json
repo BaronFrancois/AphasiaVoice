@@ -9,7 +9,8 @@
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nfix: Configuration pour déploiement production\n\n- Remplacement du CDN Tailwind par Tailwind CSS compilé\n- Suppression des références à l''API Gemini non utilisée\n- Ajout de la configuration Netlify avec redirects\n- Configuration GitHub Actions pour déploiement automatique\n- Correction du meta tag déprécié apple-mobile-web-app-capable\n- Déplacement du manifest.json dans le dossier public\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git push:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": [],
     "ask": []

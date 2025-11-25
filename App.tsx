@@ -435,7 +435,7 @@ const App: React.FC = () => {
   const currentTiles = isDevMode ? getCurrentDraftPage() : (pages[currentPageIndex] || []);
   const isSingleScreen = currentTiles.length === 1;
   const isSplitScreen = currentTiles.length === 2 && currentTiles.every(t => t.colSpan === 2);
-  const isQuadScreen = currentTiles.length === 4 && currentTiles.every(t => t.colSpan === 2);
+  const isQuadScreen = currentTiles.length === 4; // Grille 2x2 pour 4 boutons
   const isFullScreenMode = !isDevMode && (isSingleScreen || isSplitScreen || isQuadScreen);
 
   let gridClasses = "grid gap-6 p-4 h-full w-full overflow-y-auto content-start";

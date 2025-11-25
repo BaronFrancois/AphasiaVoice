@@ -42,7 +42,7 @@ export const NEEDS_OPTIONS: QuickWord[] = [
     textColor: 'text-white',
     icon: GlassWater,
     iconName: 'glass',
-    colSpan: 2
+    colSpan: 1
   },
   {
     id: 'pain',
@@ -53,7 +53,7 @@ export const NEEDS_OPTIONS: QuickWord[] = [
     textColor: 'text-white',
     icon: Activity,
     iconName: 'pain',
-    colSpan: 2
+    colSpan: 1
   },
   {
     id: 'toilet',
@@ -64,7 +64,7 @@ export const NEEDS_OPTIONS: QuickWord[] = [
     textColor: 'text-white',
     icon: Accessibility,
     iconName: 'toilet',
-    colSpan: 2
+    colSpan: 1
   },
   {
     id: 'help',
@@ -75,7 +75,7 @@ export const NEEDS_OPTIONS: QuickWord[] = [
     textColor: 'text-black',
     icon: HelpCircle,
     iconName: 'help',
-    colSpan: 2
+    colSpan: 1
   }
 ];
 
@@ -91,7 +91,7 @@ export const EMOTIONS_OPTIONS: QuickWord[] = [
     textColor: 'text-white',
     icon: Frown,
     iconName: 'sad',
-    colSpan: 2
+    colSpan: 1
   },
   {
     id: 'happy',
@@ -102,7 +102,7 @@ export const EMOTIONS_OPTIONS: QuickWord[] = [
     textColor: 'text-white',
     icon: Smile,
     iconName: 'happy',
-    colSpan: 2
+    colSpan: 1
   },
   {
     id: 'love',
@@ -113,7 +113,7 @@ export const EMOTIONS_OPTIONS: QuickWord[] = [
     textColor: 'text-white',
     icon: Heart,
     iconName: 'heart',
-    colSpan: 2
+    colSpan: 1
   },
   {
     id: 'tired',
@@ -124,7 +124,7 @@ export const EMOTIONS_OPTIONS: QuickWord[] = [
     textColor: 'text-white',
     icon: Moon,
     iconName: 'bed',
-    colSpan: 2
+    colSpan: 1
   }
 ];
 

@@ -26,6 +26,8 @@ const App: React.FC = () => {
   const [pages, setPages] = useState<QuickWord[][]>(INITIAL_PAGES);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [pageTransition, setPageTransition] = useState<'none' | 'left' | 'right'>('none');
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isSwipeActive, setIsSwipeActive] = useState(false);
   
   // -- Edit / Dev Mode State --
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -381,25 +383,49 @@ const App: React.FC = () => {
     if (isDevMode) return; // Disable swipe nav in dev mode to prevent conflicts
     touchEndRef.current = null;
     touchStartRef.current = e.targetTouches[0].clientX;
+    setIsSwipeActive(true);
+    setSwipeOffset(0);
   };
+
   const handleTouchMove = (e: React.TouchEvent) => {
     if (isDevMode) return;
+    if (!touchStartRef.current) return;
+
     touchEndRef.current = e.targetTouches[0].clientX;
+    const distance = touchStartRef.current - touchEndRef.current;
+
+    // Limiter le swipe pour éviter de sortir des limites
+    const visiblePages = visiblePageMapping;
+    const currentMapIndex = visiblePages.indexOf(currentPageIndex);
+
+    // Empêcher le swipe si on est aux limites
+    if ((distance > 0 && currentMapIndex >= visiblePages.length - 1) ||
+        (distance < 0 && currentMapIndex <= 0)) {
+      setSwipeOffset(distance * 0.2); // Effet de "rebond" aux limites
+    } else {
+      setSwipeOffset(distance);
+    }
   };
+
   const handleTouchEnd = () => {
     if (isDevMode) return;
     if (!touchStartRef.current || !touchEndRef.current) return;
+
     const distance = touchStartRef.current - touchEndRef.current;
     const isLeftSwipe = distance > 50;
     const isRightSwipe = distance < -50;
     const visiblePages = visiblePageMapping;
     const currentMapIndex = visiblePages.indexOf(currentPageIndex);
+
+    setIsSwipeActive(false);
+    setSwipeOffset(0);
+
     if (isLeftSwipe && currentMapIndex < visiblePages.length - 1) {
       changePageWithAnimation(visiblePages[currentMapIndex + 1]);
-    }
-    if (isRightSwipe && currentMapIndex > 0) {
+    } else if (isRightSwipe && currentMapIndex > 0) {
       changePageWithAnimation(visiblePages[currentMapIndex - 1]);
     }
+
     touchStartRef.current = null;
     touchEndRef.current = null;
   };
@@ -419,8 +445,8 @@ const App: React.FC = () => {
       } else if (isSplitScreen) {
         gridClasses = "grid gap-4 p-4 h-full w-full grid-cols-1 grid-rows-2";
       } else if (isQuadScreen) {
-        // 4 boutons en grille 2x2 pour éviter le scroll
-        gridClasses = "grid gap-3 p-3 h-full w-full grid-cols-1 grid-rows-4";
+        // 4 boutons en grille 2x2 pour une meilleure lisibilité
+        gridClasses = "grid gap-4 p-4 h-full w-full grid-cols-2 grid-rows-2";
       }
   } else {
       gridClasses = "grid gap-4 p-4 w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 auto-rows-[minmax(140px,1fr)] overflow-y-auto content-start pb-20";
@@ -498,6 +524,10 @@ const App: React.FC = () => {
               ? 'animate-slideInFromLeft'
               : ''
           }`}
+          style={{
+            transform: isSwipeActive ? `translateX(-${swipeOffset}px)` : undefined,
+            transition: isSwipeActive ? 'none' : 'transform 0.3s ease-out'
+          }}
         >
             {currentTiles.map((tile) => (
                 <div key={tile.id} className={`${tile.colSpan === 2 ? 'col-span-2' : 'col-span-1'} transition-all duration-300 ${isDragging && tile.id === draggingTile?.id ? 'opacity-0' : 'opacity-100'}`}>

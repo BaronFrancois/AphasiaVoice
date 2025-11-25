@@ -1,6 +1,7 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { X, Maximize2, Minimize2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useButtonPress } from '../hooks/useButtonPress';
 
 interface SpeechButtonProps {
   id?: string;
@@ -25,12 +26,12 @@ interface SpeechButtonProps {
   onPointerDown?: (e: React.PointerEvent, id: string) => void;
 }
 
-const SpeechButton: React.FC<SpeechButtonProps> = ({ 
+const SpeechButton: React.FC<SpeechButtonProps> = ({
   id,
-  label, 
-  speakText, 
-  bgColor, 
-  textColor, 
+  label,
+  speakText,
+  bgColor,
+  textColor,
   icon: Icon,
   fullHeight = false,
   onClickAnimation,
@@ -43,25 +44,35 @@ const SpeechButton: React.FC<SpeechButtonProps> = ({
   onClick,
   onPointerDown
 }) => {
-  
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    // In edit mode, we handle selection logic in parent or via long press
-    // This onClick is now secondary if dragging is active
-    if (isEditing) {
-      if (onClick) onClick();
-      return;
-    }
+  const [isPressing, setIsPressing] = useState(false);
 
-    // Standard Speech Behavior (User Mode)
+  // Speech synthesis function
+  const speakMessage = useCallback(() => {
     if (onClickAnimation) onClickAnimation();
-    if (navigator.vibrate) navigator.vibrate(50);
 
     const utterance = new SpeechSynthesisUtterance(speakText);
     utterance.lang = 'fr-FR';
-    utterance.rate = 0.9; 
+    utterance.rate = 0.9;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
-  }, [speakText, onClickAnimation, isEditing, onClick]);
+  }, [speakText, onClickAnimation]);
+
+  // Button press handlers with tremor filtering and haptic feedback
+  const buttonPressHandlers = useButtonPress({
+    onPress: speakMessage,
+    onPressStart: () => setIsPressing(true),
+    onPressCancel: () => setIsPressing(false),
+    minPressDuration: 200, // 200ms soft hold
+    moveThreshold: 30,
+    verticalTolerance: 0.7 // Allow 70% more downward movement
+  });
+
+  // Legacy click handler for edit mode
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    if (isEditing && onClick) {
+      onClick();
+    }
+  }, [isEditing, onClick]);
 
   return (
     <div
@@ -72,6 +83,23 @@ const SpeechButton: React.FC<SpeechButtonProps> = ({
         onPointerDown={(e) => {
             if (isEditing && onPointerDown && id) {
                 onPointerDown(e, id);
+            } else if (!isEditing) {
+                buttonPressHandlers.onPointerDown(e);
+            }
+        }}
+        onPointerMove={(e) => {
+            if (!isEditing) {
+                buttonPressHandlers.onPointerMove(e);
+            }
+        }}
+        onPointerUp={(e) => {
+            if (!isEditing) {
+                buttonPressHandlers.onPointerUp(e);
+            }
+        }}
+        onPointerCancel={(e) => {
+            if (!isEditing) {
+                buttonPressHandlers.onPointerCancel(e);
             }
         }}
         onClick={handleClick}
@@ -79,13 +107,14 @@ const SpeechButton: React.FC<SpeechButtonProps> = ({
           w-full h-full
           ${bgColor} ${textColor}
           flex flex-col items-center justify-center
-          transition-all duration-100 
+          transition-all duration-100
           touch-none select-none
           border-b-[6px] border-black/20
           relative overflow-hidden
           rounded-3xl
           shadow-lg
-          ${!isEditing ? 'active:border-b-0 active:translate-y-[6px] active:shadow-none' : ''}
+          ${!isEditing && !isPressing ? 'active:border-b-0 active:translate-y-[6px] active:shadow-none' : ''}
+          ${isPressing && !isEditing ? 'scale-95 brightness-90' : ''}
           ${isEditing ? 'cursor-grab border-dashed border-4 border-white/30' : ''}
           ${isSelected ? 'ring-4 ring-yellow-400 scale-95 opacity-90 z-10' : ''}
         `}

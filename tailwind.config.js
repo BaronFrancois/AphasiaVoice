@@ -22,6 +22,8 @@ export default {
     'bg-cyan-600',
     'bg-indigo-600',
     'bg-emerald-600',
+    'bg-rose-600',
+    'bg-pink-600',
     // Text colors
     'text-white',
     'text-black',
@@ -38,6 +40,8 @@ export default {
     'hover:bg-cyan-700',
     'hover:bg-indigo-700',
     'hover:bg-emerald-700',
+    'hover:bg-rose-700',
+    'hover:bg-pink-700',
   ],
   theme: {
     extend: {},

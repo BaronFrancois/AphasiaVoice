@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { BINARY_OPTIONS, NEEDS_OPTIONS, AVAILABLE_ICONS, PRESET_TILES } from './constants';
+import { NEEDS_OPTIONS, EMOTIONS_OPTIONS, AVAILABLE_ICONS, PRESET_TILES } from './constants';
 import { QuickWord } from './types';
 import SpeechButton from './components/SpeechButton';
 import NavBar from './components/NavBar';
-import { Lock, Settings, X, ArrowRight, Check, AlertTriangle, Plus, Layout, LogOut } from 'lucide-react';
+import { Settings, X, ArrowRight, Check, AlertTriangle, Plus, Layout, LogOut } from 'lucide-react';
 
 // Color palette for custom tiles
 const TILE_COLORS = [
@@ -17,8 +17,8 @@ const TILE_COLORS = [
 ];
 
 const INITIAL_PAGES: QuickWord[][] = [
-  BINARY_OPTIONS,
-  NEEDS_OPTIONS
+  NEEDS_OPTIONS,      // Page 1: Besoins vitaux
+  EMOTIONS_OPTIONS    // Page 2: Émotions / Relationnel
 ];
 
 const App: React.FC = () => {
@@ -447,12 +447,13 @@ const App: React.FC = () => {
             <span className="text-slate-100">APHASIA</span>
             </h1>
             {isDevMode ? (
-            <button onClick={() => isDevMode && (JSON.stringify(draftPages) !== JSON.stringify(pages) ? setShowExitConfirm(true) : setIsDevMode(false))} className="bg-slate-800 text-slate-200 px-4 py-2 rounded-xl font-bold border border-slate-700 active:scale-95 transition-transform">
+            <button onClick={() => isDevMode && (JSON.stringify(draftPages) !== JSON.stringify(pages) ? setShowExitConfirm(true) : setIsDevMode(false))} className="bg-slate-800 text-slate-200 px-6 py-2 rounded-xl font-bold border border-slate-700 active:scale-95 transition-transform">
                 Terminer
             </button>
             ) : (
-            <button onClick={() => setShowAuthModal(true)} className="p-3 text-slate-300 hover:text-white bg-slate-800 rounded-full active:scale-90">
-                <Lock size={20} />
+            <button onClick={() => setShowAuthModal(true)} className="bg-slate-800 text-slate-200 px-6 py-2 rounded-xl font-bold border border-slate-700 active:scale-95 transition-transform flex items-center gap-2">
+                <Settings size={20} />
+                <span>Modifier</span>
             </button>
             )}
         </div>

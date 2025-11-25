@@ -30,33 +30,8 @@ export const AVAILABLE_ICONS = [
   { id: 'go', icon: ArrowRightCircle, label: 'Aller' },
 ];
 
-// Top needed words post-stroke (Basic)
-export const BINARY_OPTIONS: QuickWord[] = [
-  {
-    id: 'yes',
-    label: 'OUI',
-    speakText: 'Oui',
-    color: 'green',
-    bgColor: 'bg-green-600',
-    textColor: 'text-white',
-    icon: ThumbsUp,
-    iconName: 'thumbs-up',
-    colSpan: 2 // Full width in grid
-  },
-  {
-    id: 'no',
-    label: 'NON',
-    speakText: 'Non',
-    color: 'red',
-    bgColor: 'bg-red-600',
-    textColor: 'text-white',
-    icon: ThumbsDown,
-    iconName: 'thumbs-down',
-    colSpan: 2 // Full width in grid
-  }
-];
-
-// Extended needs (The "Top 6" concept expanded slightly for a grid)
+// Page 1: Besoins vitaux (Basic vital needs)
+// Code couleur: Bleu = besoins physiques, Rouge = danger, Jaune = information
 export const NEEDS_OPTIONS: QuickWord[] = [
   {
     id: 'water',
@@ -66,72 +41,125 @@ export const NEEDS_OPTIONS: QuickWord[] = [
     bgColor: 'bg-blue-600',
     textColor: 'text-white',
     icon: GlassWater,
-    iconName: 'glass'
-  },
-  {
-    id: 'toilet',
-    label: 'TOILETTES',
-    speakText: 'Je dois aller aux toilettes',
-    color: 'cyan',
-    bgColor: 'bg-cyan-600',
-    textColor: 'text-white',
-    icon: Accessibility,
-    iconName: 'toilet'
+    iconName: 'glass',
+    colSpan: 2
   },
   {
     id: 'pain',
     label: 'DOULEUR',
     speakText: 'J\'ai mal',
-    color: 'orange',
-    bgColor: 'bg-orange-600',
+    color: 'red',
+    bgColor: 'bg-red-600',
     textColor: 'text-white',
     icon: Activity,
-    iconName: 'pain'
+    iconName: 'pain',
+    colSpan: 2
   },
   {
-    id: 'sleep',
-    label: 'DORMIR',
-    speakText: 'Je suis fatigué, je veux dormir',
-    color: 'indigo',
-    bgColor: 'bg-indigo-600',
+    id: 'toilet',
+    label: 'TOILETTES',
+    speakText: 'Je dois aller aux toilettes',
+    color: 'blue',
+    bgColor: 'bg-blue-600',
     textColor: 'text-white',
-    icon: Moon,
-    iconName: 'bed'
-  },
-  {
-    id: 'eat',
-    label: 'MANGER',
-    speakText: 'J\'ai faim',
-    color: 'emerald',
-    bgColor: 'bg-emerald-600',
-    textColor: 'text-white',
-    icon: Utensils,
-    iconName: 'food'
+    icon: Accessibility,
+    iconName: 'toilet',
+    colSpan: 2
   },
   {
     id: 'help',
     label: 'AIDE',
     speakText: 'Aidez-moi s\'il vous plaît',
     color: 'yellow',
-    bgColor: 'bg-yellow-600',
-    textColor: 'text-black', // Contrast fix
+    bgColor: 'bg-yellow-500',
+    textColor: 'text-black',
     icon: HelpCircle,
-    iconName: 'help'
+    iconName: 'help',
+    colSpan: 2
   }
 ];
 
+// Page 2: Émotions / Relationnel (Emotions and relationships)
+// Code couleur: Rose/Rouge = émotions, Vert = positif
+export const EMOTIONS_OPTIONS: QuickWord[] = [
+  {
+    id: 'sad',
+    label: 'TRISTE',
+    speakText: 'Je suis triste',
+    color: 'rose',
+    bgColor: 'bg-rose-600',
+    textColor: 'text-white',
+    icon: Frown,
+    iconName: 'sad',
+    colSpan: 2
+  },
+  {
+    id: 'happy',
+    label: 'CONTENT',
+    speakText: 'Je suis content',
+    color: 'green',
+    bgColor: 'bg-green-600',
+    textColor: 'text-white',
+    icon: Smile,
+    iconName: 'happy',
+    colSpan: 2
+  },
+  {
+    id: 'love',
+    label: 'JE T\'AIME',
+    speakText: 'Je t\'aime',
+    color: 'pink',
+    bgColor: 'bg-pink-600',
+    textColor: 'text-white',
+    icon: Heart,
+    iconName: 'heart',
+    colSpan: 2
+  },
+  {
+    id: 'tired',
+    label: 'FATIGUÉ',
+    speakText: 'Je suis fatigué',
+    color: 'indigo',
+    bgColor: 'bg-indigo-600',
+    textColor: 'text-white',
+    icon: Moon,
+    iconName: 'bed',
+    colSpan: 2
+  }
+];
+
+// Legacy export for backwards compatibility (no longer used)
+export const BINARY_OPTIONS: QuickWord[] = [];
+
 // Presets for Admin Library (Drag and Drop)
+// Code couleur harmonisé:
+// - Vert = validation / positif
+// - Rouge = refus / danger
+// - Bleu = besoins physiques
+// - Jaune = information
+// - Rose/Rouge = émotions
 export const PRESET_TILES = [
+  // Positif
   { label: 'OUI', speak: 'Oui', iconName: 'thumbs-up', color: 'green', bg: 'bg-green-600', text: 'text-white' },
+  { label: 'CONTENT', speak: 'Je suis content', iconName: 'happy', color: 'green', bg: 'bg-green-600', text: 'text-white' },
+  { label: 'MERCI', speak: 'Merci', iconName: 'happy', color: 'green', bg: 'bg-green-600', text: 'text-white' },
+
+  // Négatif / Danger
   { label: 'NON', speak: 'Non', iconName: 'thumbs-down', color: 'red', bg: 'bg-red-600', text: 'text-white' },
   { label: 'STOP', speak: 'Stop', iconName: 'stop', color: 'red', bg: 'bg-red-600', text: 'text-white' },
+  { label: 'DOULEUR', speak: 'J\'ai mal', iconName: 'pain', color: 'red', bg: 'bg-red-600', text: 'text-white' },
+
+  // Besoins physiques
   { label: 'BOIRE', speak: 'Je veux boire', iconName: 'glass', color: 'blue', bg: 'bg-blue-600', text: 'text-white' },
-  { label: 'MANGER', speak: 'Je veux manger', iconName: 'food', color: 'emerald', bg: 'bg-emerald-600', text: 'text-white' },
-  { label: 'TOILETTES', speak: 'Toilettes', iconName: 'toilet', color: 'cyan', bg: 'bg-cyan-600', text: 'text-white' },
-  { label: 'DOULEUR', speak: 'J\'ai mal', iconName: 'pain', color: 'orange', bg: 'bg-orange-600', text: 'text-white' },
-  { label: 'DORMIR', speak: 'Je veux dormir', iconName: 'bed', color: 'indigo', bg: 'bg-indigo-600', text: 'text-white' },
-  { label: 'AIDE', speak: 'Aidez-moi', iconName: 'help', color: 'yellow', bg: 'bg-yellow-600', text: 'text-black' },
-  { label: 'MERCI', speak: 'Merci', iconName: 'happy', color: 'yellow', bg: 'bg-yellow-500', text: 'text-black' },
-  { label: 'BONJOUR', speak: 'Bonjour', iconName: 'hand', color: 'slate', bg: 'bg-slate-500', text: 'text-white' },
-  { label: 'MAISON', speak: 'Je veux rentrer', iconName: 'home', color: 'purple', bg: 'bg-purple-600', text: 'text-white' },
+  { label: 'MANGER', speak: 'Je veux manger', iconName: 'food', color: 'blue', bg: 'bg-blue-600', text: 'text-white' },
+  { label: 'TOILETTES', speak: 'Toilettes', iconName: 'toilet', color: 'blue', bg: 'bg-blue-600', text: 'text-white' },
+
+  // Information
+  { label: 'AIDE', speak: 'Aidez-moi', iconName: 'help', color: 'yellow', bg: 'bg-yellow-500', text: 'text-black' },
+  { label: 'BONJOUR', speak: 'Bonjour', iconName: 'hand', color: 'yellow', bg: 'bg-yellow-500', text: 'text-black' },
+
+  // Émotions
+  { label: 'TRISTE', speak: 'Je suis triste', iconName: 'sad', color: 'rose', bg: 'bg-rose-600', text: 'text-white' },
+  { label: 'JE T\'AIME', speak: 'Je t\'aime', iconName: 'heart', color: 'pink', bg: 'bg-pink-600', text: 'text-white' },
+  { label: 'FATIGUÉ', speak: 'Je suis fatigué', iconName: 'bed', color: 'indigo', bg: 'bg-indigo-600', text: 'text-white' },
 ];

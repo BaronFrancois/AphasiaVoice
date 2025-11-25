@@ -25,6 +25,7 @@ const App: React.FC = () => {
   // -- Data State --
   const [pages, setPages] = useState<QuickWord[][]>(INITIAL_PAGES);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [pageTransition, setPageTransition] = useState<'none' | 'left' | 'right'>('none');
   
   // -- Edit / Dev Mode State --
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -365,6 +366,16 @@ const App: React.FC = () => {
     setShowAddTileModal(false);
   };
 
+  // Helper function to change page with animation
+  const changePageWithAnimation = (newPageIndex: number) => {
+    const direction = newPageIndex > currentPageIndex ? 'left' : 'right';
+    setPageTransition(direction);
+    setTimeout(() => {
+      setCurrentPageIndex(newPageIndex);
+      setTimeout(() => setPageTransition('none'), 50);
+    }, 50);
+  };
+
   // --- Standard Swipe (User Mode) ---
   const handleTouchStart = (e: React.TouchEvent) => {
     if (isDevMode) return; // Disable swipe nav in dev mode to prevent conflicts
@@ -383,8 +394,12 @@ const App: React.FC = () => {
     const isRightSwipe = distance < -50;
     const visiblePages = visiblePageMapping;
     const currentMapIndex = visiblePages.indexOf(currentPageIndex);
-    if (isLeftSwipe && currentMapIndex < visiblePages.length - 1) setCurrentPageIndex(visiblePages[currentMapIndex + 1]);
-    if (isRightSwipe && currentMapIndex > 0) setCurrentPageIndex(visiblePages[currentMapIndex - 1]);
+    if (isLeftSwipe && currentMapIndex < visiblePages.length - 1) {
+      changePageWithAnimation(visiblePages[currentMapIndex + 1]);
+    }
+    if (isRightSwipe && currentMapIndex > 0) {
+      changePageWithAnimation(visiblePages[currentMapIndex - 1]);
+    }
     touchStartRef.current = null;
     touchEndRef.current = null;
   };
@@ -394,13 +409,19 @@ const App: React.FC = () => {
   const currentTiles = isDevMode ? getCurrentDraftPage() : (pages[currentPageIndex] || []);
   const isSingleScreen = currentTiles.length === 1;
   const isSplitScreen = currentTiles.length === 2 && currentTiles.every(t => t.colSpan === 2);
-  const isFullScreenMode = !isDevMode && (isSingleScreen || isSplitScreen);
+  const isQuadScreen = currentTiles.length === 4 && currentTiles.every(t => t.colSpan === 2);
+  const isFullScreenMode = !isDevMode && (isSingleScreen || isSplitScreen || isQuadScreen);
 
   let gridClasses = "grid gap-6 p-4 h-full w-full overflow-y-auto content-start";
   if (isFullScreenMode) {
-      gridClasses = isSingleScreen 
-        ? "grid gap-6 p-4 h-full w-full grid-cols-1 grid-rows-1" 
-        : "grid gap-6 p-4 h-full w-full grid-cols-1 grid-rows-2";
+      if (isSingleScreen) {
+        gridClasses = "grid gap-4 p-4 h-full w-full grid-cols-1 grid-rows-1";
+      } else if (isSplitScreen) {
+        gridClasses = "grid gap-4 p-4 h-full w-full grid-cols-1 grid-rows-2";
+      } else if (isQuadScreen) {
+        // 4 boutons en grille 2x2 pour éviter le scroll
+        gridClasses = "grid gap-3 p-3 h-full w-full grid-cols-1 grid-rows-4";
+      }
   } else {
       gridClasses = "grid gap-4 p-4 w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 auto-rows-[minmax(140px,1fr)] overflow-y-auto content-start pb-20";
   }
@@ -460,7 +481,7 @@ const App: React.FC = () => {
       </header>
 
       {/* Main Grid */}
-      <main className="flex-1 min-h-0 relative flex flex-col">
+      <main className="flex-1 min-h-0 relative flex flex-col overflow-hidden">
         {!isDevMode && currentTiles.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full text-slate-500 opacity-50">
                 <Layout size={64} className="mb-4" />
@@ -468,7 +489,16 @@ const App: React.FC = () => {
             </div>
         )}
 
-        <div className={gridClasses}>
+        <div
+          key={currentPageIndex}
+          className={`${gridClasses} ${
+            pageTransition === 'left'
+              ? 'animate-slideInFromRight'
+              : pageTransition === 'right'
+              ? 'animate-slideInFromLeft'
+              : ''
+          }`}
+        >
             {currentTiles.map((tile) => (
                 <div key={tile.id} className={`${tile.colSpan === 2 ? 'col-span-2' : 'col-span-1'} transition-all duration-300 ${isDragging && tile.id === draggingTile?.id ? 'opacity-0' : 'opacity-100'}`}>
                     <SpeechButton 
@@ -513,7 +543,19 @@ const App: React.FC = () => {
       )}
 
       {/* Footer */}
-      <NavBar currentPage={currentPageIndex} pageCount={visiblePageMapping.length} setPage={(idx) => setCurrentPageIndex(visiblePageMapping[idx])} isDevMode={isDevMode} />
+      <NavBar
+        currentPage={currentPageIndex}
+        pageCount={visiblePageMapping.length}
+        setPage={(idx) => {
+          const newPageIndex = visiblePageMapping[idx];
+          if (!isDevMode) {
+            changePageWithAnimation(newPageIndex);
+          } else {
+            setCurrentPageIndex(newPageIndex);
+          }
+        }}
+        isDevMode={isDevMode}
+      />
 
       {/* Modals */}
       {showAuthModal && (

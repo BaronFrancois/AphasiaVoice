@@ -30,7 +30,7 @@ export const useButtonPress = (config: ButtonPressConfig): ButtonPressHandlers =
     onPress,
     onPressStart,
     onPressCancel,
-    minPressDuration = 100, // Default 100ms for better reactivity
+    minPressDuration = 20, // Default 100ms for better reactivity
     moveThreshold = 30, // 30px horizontal threshold
     verticalTolerance = 0.7 // 70% more tolerance for downward movement
   } = config;

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">AphasieVoice</string>
+    <string name="title_activity_main">AphasieVoice</string>
+    <string name="package_name">fr.aphasievoice.app</string>
+    <string name="custom_url_scheme">fr.aphasievoice.app</string>
+</resources>

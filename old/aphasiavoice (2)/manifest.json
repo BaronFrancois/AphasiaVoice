@@ -1,0 +1,16 @@
+{
+  "short_name": "AphasiaVoice",
+  "name": "AphasiaVoice Assistant",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/10632/10632626.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a",
+  "orientation": "portrait"
+}

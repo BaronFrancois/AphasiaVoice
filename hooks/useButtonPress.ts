@@ -113,6 +113,13 @@ export const useButtonPress = (config: ButtonPressConfig): ButtonPressHandlers =
       // Success haptic feedback
       triggerHapticFeedback(50);
       onPress();
+      // Reset pressing state after successful press
+      if (onPressCancel) {
+        onPressCancel();
+      }
+    } else if (!isPressValidRef.current && !hasMovedTooMuchRef.current && onPressCancel) {
+      // Press was cancelled because it was released too quickly (before validation)
+      onPressCancel();
     } else if (hasMovedTooMuchRef.current && onPressCancel) {
       // Cancel haptic feedback (optional, different pattern)
       // triggerHapticFeedback([30, 50, 30]);

@@ -8,7 +8,7 @@ import {
 import { QuickWord } from "./types";
 import SpeechButton from "./components/SpeechButton";
 import NavBar from "./components/NavBar";
-import EditorDashboard from "./components/EditorDashboard";
+import EditorDashboard, { HistoryEntry } from "./components/EditorDashboard";
 import {
     Settings,
     X,
@@ -31,6 +31,17 @@ const TILE_COLORS = [
     { id: "slate", name: "Gris", bg: "bg-slate-600", text: "text-white" },
 ];
 
+type ViewMode = "auto" | "mobile" | "tablet" | "desktop";
+
+const STORAGE_KEYS = {
+    pages: "aphasia_app_data_v2",
+    seq: "aphasia_tile_seq",
+    history: "aphasia_history_v1",
+    historyLimit: "aphasia_history_limit_mb",
+    meta: "aphasia_user_meta",
+    viewMode: "aphasia_view_mode",
+};
+
 const INITIAL_PAGES: QuickWord[][] = [
     NEEDS_OPTIONS, // Page 1: Besoins vitaux
     EMOTIONS_OPTIONS, // Page 2: Émotions / Relationnel
@@ -45,6 +56,16 @@ const App: React.FC = () => {
     >("none");
     const [swipeOffset, setSwipeOffset] = useState(0);
     const [isSwipeActive, setIsSwipeActive] = useState(false);
+    const tileSeqRef = useRef(0);
+    const [tileSeq, setTileSeq] = useState(0);
+    const [history, setHistory] = useState<HistoryEntry[]>([]);
+    const [historySizeBytes, setHistorySizeBytes] = useState(0);
+    const [historyLimitMb, setHistoryLimitMb] = useState(150);
+    const [userMeta, setUserMeta] = useState({
+        firstName: "",
+        lastName: "",
+    });
+    const [viewMode, setViewMode] = useState<ViewMode>("auto");
 
     // -- Edit / Dev Mode State --
     const [showAuthModal, setShowAuthModal] = useState(false);
@@ -89,19 +110,106 @@ const App: React.FC = () => {
 
     // --- Persistence ---
     useEffect(() => {
-        const saved = localStorage.getItem("aphasia_app_data_v2");
+        let loadedPages = INITIAL_PAGES;
+        const saved = localStorage.getItem(STORAGE_KEYS.pages);
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
-                if (Array.isArray(parsed)) setPages(parsed);
+                if (Array.isArray(parsed)) loadedPages = parsed;
             } catch (e) {}
         }
+        setPages(loadedPages);
+        setDraftPages(loadedPages);
+
+        const savedHistory = localStorage.getItem(STORAGE_KEYS.history);
+        if (savedHistory) {
+            try {
+                const parsed = JSON.parse(savedHistory);
+                if (Array.isArray(parsed)) setHistory(parsed);
+            } catch (e) {}
+        }
+
+        const savedLimit = localStorage.getItem(STORAGE_KEYS.historyLimit);
+        if (savedLimit) {
+            const val = Number(savedLimit);
+            if (!Number.isNaN(val)) setHistoryLimitMb(val);
+        }
+
+        const savedMeta = localStorage.getItem(STORAGE_KEYS.meta);
+        if (savedMeta) {
+            try {
+                const parsed = JSON.parse(savedMeta);
+                if (parsed && typeof parsed === "object") {
+                    setUserMeta({
+                        firstName: parsed.firstName || "",
+                        lastName: parsed.lastName || "",
+                    });
+                }
+            } catch (e) {}
+        }
+
+        const savedView = localStorage.getItem(STORAGE_KEYS.viewMode);
+        if (
+            savedView === "auto" ||
+            savedView === "mobile" ||
+            savedView === "tablet" ||
+            savedView === "desktop"
+        ) {
+            setViewMode(savedView);
+        }
+
+        const savedSeq = localStorage.getItem(STORAGE_KEYS.seq);
+        if (savedSeq) {
+            const val = Number(savedSeq);
+            if (!Number.isNaN(val)) {
+                tileSeqRef.current = val;
+                setTileSeq(val);
+            }
+        }
+
+        const tilesCount = loadedPages.reduce(
+            (sum, p) => sum + p.length,
+            0
+        );
+        const derivedSeq = Math.max(tileSeqRef.current, tilesCount);
+        tileSeqRef.current = derivedSeq;
+        setTileSeq(derivedSeq);
     }, []);
 
     const saveToStorage = (data: QuickWord[][]) => {
         setPages(data);
-        localStorage.setItem("aphasia_app_data_v2", JSON.stringify(data));
+        localStorage.setItem(STORAGE_KEYS.pages, JSON.stringify(data));
     };
+
+    useEffect(() => {
+        try {
+            localStorage.setItem(STORAGE_KEYS.history, JSON.stringify(history));
+        } catch (e) {}
+        try {
+            const size = new TextEncoder().encode(
+                JSON.stringify(history)
+            ).length;
+            setHistorySizeBytes(size);
+        } catch (e) {
+            setHistorySizeBytes(0);
+        }
+    }, [history]);
+
+    useEffect(() => {
+        localStorage.setItem(STORAGE_KEYS.historyLimit, `${historyLimitMb}`);
+    }, [historyLimitMb]);
+
+    useEffect(() => {
+        localStorage.setItem(STORAGE_KEYS.meta, JSON.stringify(userMeta));
+    }, [userMeta]);
+
+    useEffect(() => {
+        localStorage.setItem(STORAGE_KEYS.viewMode, viewMode);
+    }, [viewMode]);
+
+    useEffect(() => {
+        localStorage.setItem(STORAGE_KEYS.seq, `${tileSeq}`);
+    }, [tileSeq]);
 
     // --- Helpers ---
     const visiblePageMapping = useMemo(() => {
@@ -130,6 +238,169 @@ const App: React.FC = () => {
             newPages[currentPageIndex] = newTiles;
             return newPages;
         });
+    };
+
+    const estimateBytes = (data: any) => {
+        try {
+            return new TextEncoder().encode(JSON.stringify(data)).length;
+        } catch (e) {
+            return 0;
+        }
+    };
+
+    const getNextTileId = () => {
+        const next = tileSeqRef.current + 1;
+        tileSeqRef.current = next;
+        setTileSeq(next);
+        return `tile-${next}`;
+    };
+
+    const addHistoryEntry = (tile: QuickWord) => {
+        if (isDevMode) return;
+        setHistory((prev) => {
+            const entry: HistoryEntry = {
+                id: Date.now().toString(),
+                tileId: tile.id,
+                tileLabel: tile.label,
+                pageIndex: currentPageIndex,
+                timestamp: Date.now(),
+            };
+            const next = [...prev, entry];
+            const bytes = estimateBytes(next);
+            const limitBytes = historyLimitMb * 1024 * 1024;
+            if (bytes > limitBytes) {
+                const proceed = window.confirm(
+                    `L'historique atteint ${(bytes / 1024 / 1024).toFixed(
+                        2
+                    )} Mo, au-delà du plafond de ${historyLimitMb} Mo. Continuer l'enregistrement ?`
+                );
+                if (!proceed) return prev;
+            }
+            return next;
+        });
+    };
+
+    const clearHistory = () => setHistory([]);
+
+    const downloadJSON = (data: any, filename: string) => {
+        try {
+            const blob = new Blob([JSON.stringify(data, null, 2)], {
+                type: "application/json",
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            alert("Export impossible.");
+        }
+    };
+
+    const exportHistory = () => {
+        const payload = {
+            exportedAt: new Date().toISOString(),
+            entries: history,
+            sizeBytes: historySizeBytes,
+        };
+        downloadJSON(payload, "aphasia-history.json");
+    };
+
+    const exportAll = () => {
+        const payload = {
+            exportedAt: new Date().toISOString(),
+            meta: userMeta,
+            viewMode,
+            pages,
+            history,
+            tileSeq,
+            historyLimitMb,
+        };
+        downloadJSON(payload, "aphasia-data-export.json");
+    };
+
+    const emailHistory = () => {
+        const payload = {
+            exportedAt: new Date().toISOString(),
+            entries: history,
+            sizeBytes: historySizeBytes,
+        };
+        const body = encodeURIComponent(
+            JSON.stringify(payload).slice(0, 8000)
+        );
+        window.location.href = `mailto:?subject=AphasiaVoice%20Historique&body=${body}`;
+    };
+
+    const handleImportHistory = (file: File) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const parsed = JSON.parse(reader.result as string);
+                if (Array.isArray(parsed)) {
+                    setHistory(parsed);
+                } else if (Array.isArray(parsed.entries)) {
+                    setHistory(parsed.entries);
+                } else {
+                    alert("Fichier non valide.");
+                }
+            } catch (e) {
+                alert("Fichier non valide.");
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    const handleImportAll = (file: File) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const parsed = JSON.parse(reader.result as string);
+                if (parsed.pages && Array.isArray(parsed.pages)) {
+                    setPages(parsed.pages);
+                    setDraftPages(parsed.pages);
+                    localStorage.setItem(
+                        STORAGE_KEYS.pages,
+                        JSON.stringify(parsed.pages)
+                    );
+                }
+                if (Array.isArray(parsed.history)) {
+                    setHistory(parsed.history);
+                }
+                if (typeof parsed.historyLimitMb === "number") {
+                    setHistoryLimitMb(parsed.historyLimitMb);
+                }
+                if (parsed.meta && typeof parsed.meta === "object") {
+                    setUserMeta({
+                        firstName: parsed.meta.firstName || "",
+                        lastName: parsed.meta.lastName || "",
+                    });
+                }
+                if (
+                    parsed.viewMode === "auto" ||
+                    parsed.viewMode === "mobile" ||
+                    parsed.viewMode === "tablet" ||
+                    parsed.viewMode === "desktop"
+                ) {
+                    setViewMode(parsed.viewMode);
+                }
+                if (typeof parsed.tileSeq === "number") {
+                    tileSeqRef.current = parsed.tileSeq;
+                    setTileSeq(parsed.tileSeq);
+                }
+                alert("Import réussi.");
+            } catch (e) {
+                alert("Import impossible.");
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    const handleMetaChange = (
+        field: "firstName" | "lastName",
+        value: string
+    ) => {
+        setUserMeta((prev) => ({ ...prev, [field]: value }));
     };
 
     const getIconComponent = (name?: string) => {
@@ -357,11 +628,13 @@ const App: React.FC = () => {
         const final = cleaned.length > 0 ? cleaned : [[]];
         saveToStorage(final);
         setIsDevMode(false);
+        setShowEditorDashboard(false);
         setShowExitConfirm(false);
     };
 
     const handleDiscardAndExit = () => {
         setIsDevMode(false);
+        setShowEditorDashboard(false);
         setShowExitConfirm(false);
     };
 
@@ -383,7 +656,7 @@ const App: React.FC = () => {
 
     const addPresetToPage = (preset: (typeof PRESET_TILES)[0]) => {
         const tile: QuickWord = {
-            id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+            id: getNextTileId(),
             label: preset.label,
             speakText: preset.speak,
             color: preset.color,
@@ -400,7 +673,7 @@ const App: React.FC = () => {
         if (!newTileLabel) return;
 
         const tile: QuickWord = {
-            id: Date.now().toString(),
+            id: getNextTileId(),
             label: newTileLabel,
             speakText: newTileSpeak || newTileLabel,
             color: newTileColor.id,
@@ -512,7 +785,35 @@ const App: React.FC = () => {
     } else {
         gridClasses =
             "grid gap-4 p-4 w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 auto-rows-[minmax(140px,1fr)] overflow-y-auto content-start pb-20";
+        if (viewMode === "mobile") {
+            gridClasses =
+                "grid gap-4 p-4 w-full grid-cols-2 auto-rows-[minmax(140px,1fr)] overflow-y-auto content-start pb-20";
+        } else if (viewMode === "tablet") {
+            gridClasses =
+                "grid gap-4 p-4 w-full grid-cols-3 auto-rows-[minmax(140px,1fr)] overflow-y-auto content-start pb-20";
+        } else if (viewMode === "desktop") {
+            gridClasses =
+                "grid gap-4 p-4 w-full grid-cols-4 auto-rows-[minmax(140px,1fr)] overflow-y-auto content-start pb-20";
+        }
     }
+
+    const isDashboardView = isDevMode && showEditorDashboard;
+
+    const handleNavPageSelect = (idx: number) => {
+        setShowEditorDashboard(false);
+        const newPageIndex = visiblePageMapping[idx];
+        if (!isDevMode) {
+            changePageWithAnimation(newPageIndex);
+        } else {
+            setCurrentPageIndex(newPageIndex);
+        }
+    };
+
+    const handleDashboardSelect = () => {
+        if (isDevMode) {
+            setShowEditorDashboard(true);
+        }
+    };
 
     // Ghost Tile Component
     const GhostTile = () => {
@@ -541,27 +842,51 @@ const App: React.FC = () => {
         );
     };
 
-    if (isDevMode && showEditorDashboard) {
-        return (
-            <EditorDashboard
-                onExit={exitModifierMode}
-                onOpenBoard={goToBoardEditor}
-            />
-        );
-    }
-
     return (
         <div
-            className="h-[100dvh] w-full flex flex-col bg-slate-900 select-none overflow-hidden touch-none"
-            onPointerMove={isDevMode ? handleGlobalPointerMove : undefined}
-            onPointerUp={isDevMode ? handleGlobalPointerUp : undefined}
-            onPointerCancel={isDevMode ? handleGlobalPointerUp : undefined}
+            className={`h-[100dvh] w-full flex flex-col bg-slate-900 select-none ${
+                isDashboardView ? "overflow-y-auto touch-auto" : "overflow-hidden touch-none"
+            }`}
+            onPointerMove={
+                isDevMode && !isDashboardView ? handleGlobalPointerMove : undefined
+            }
+            onPointerUp={
+                isDevMode && !isDashboardView ? handleGlobalPointerUp : undefined
+            }
+            onPointerCancel={
+                isDevMode && !isDashboardView ? handleGlobalPointerUp : undefined
+            }
             onTouchStart={!isDevMode ? handleTouchStart : undefined}
             onTouchMove={!isDevMode ? handleTouchMove : undefined}
             onTouchEnd={!isDevMode ? handleTouchEnd : undefined}
         >
             <GhostTile />
 
+            {isDashboardView ? (
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                    <EditorDashboard
+                        onExit={exitModifierMode}
+                        onOpenBoard={goToBoardEditor}
+                        showFooterAction={false}
+                        history={history}
+                        historySizeBytes={historySizeBytes}
+                        historyLimitMb={historyLimitMb}
+                        onChangeHistoryLimit={setHistoryLimitMb}
+                        onClearHistory={clearHistory}
+                        onExportHistory={exportHistory}
+                        onImportHistory={handleImportHistory}
+                        onEmailHistory={emailHistory}
+                        onExportAll={exportAll}
+                        onImportAll={handleImportAll}
+                        firstName={userMeta.firstName}
+                        lastName={userMeta.lastName}
+                        onMetaChange={handleMetaChange}
+                        viewMode={viewMode}
+                        onChangeViewMode={setViewMode}
+                    />
+                </div>
+            ) : (
+                <>
             {/* Header with Safe Area support */}
             <header className="safe-area-top h-auto shrink-0 bg-slate-900 border-b border-slate-800 z-50">
                 <div className="h-16 flex items-center justify-between px-6">
@@ -641,6 +966,11 @@ const App: React.FC = () => {
                                 isEditing={isDevMode}
                                 onRemove={() => removeTile(tile.id)}
                                 onResize={() => resizeTile(tile.id)}
+                                onUse={
+                                    !isDevMode
+                                        ? () => addHistoryEntry(tile)
+                                        : undefined
+                                }
                                 onPointerDown={handlePointerDown}
                             />
                         </div>
@@ -698,20 +1028,18 @@ const App: React.FC = () => {
                     </div>
                 </div>
             )}
+                </>
+            )}
 
             {/* Footer */}
             <NavBar
                 currentPage={currentPageIndex}
                 pageCount={visiblePageMapping.length}
-                setPage={(idx) => {
-                    const newPageIndex = visiblePageMapping[idx];
-                    if (!isDevMode) {
-                        changePageWithAnimation(newPageIndex);
-                    } else {
-                        setCurrentPageIndex(newPageIndex);
-                    }
-                }}
+                setPage={handleNavPageSelect}
                 isDevMode={isDevMode}
+                showDashboard={isDevMode}
+                isDashboardActive={isDashboardView}
+                onSelectDashboard={handleDashboardSelect}
             />
 
             {/* Modals */}

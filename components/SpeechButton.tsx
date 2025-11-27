@@ -21,6 +21,7 @@ interface SpeechButtonProps {
   onResize?: () => void;
   colSpan?: number;
   onClick?: () => void;
+  onUse?: () => void;
   
   // Custom Pointer Events for Drag
   onPointerDown?: (e: React.PointerEvent, id: string) => void;
@@ -42,6 +43,7 @@ const SpeechButton: React.FC<SpeechButtonProps> = ({
   onResize,
   colSpan = 1,
   onClick,
+  onUse,
   onPointerDown
 }) => {
   const [isPressing, setIsPressing] = useState(false);
@@ -49,6 +51,7 @@ const SpeechButton: React.FC<SpeechButtonProps> = ({
   // Speech synthesis function
   const speakMessage = useCallback(() => {
     if (onClickAnimation) onClickAnimation();
+    if (onUse) onUse();
 
     const utterance = new SpeechSynthesisUtterance(speakText);
     utterance.lang = 'fr-FR';

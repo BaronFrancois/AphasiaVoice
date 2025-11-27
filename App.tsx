@@ -107,6 +107,7 @@ const App: React.FC = () => {
     // Refs for Swipe Logic (Navigation)
     const touchStartRef = useRef<number | null>(null);
     const touchEndRef = useRef<number | null>(null);
+    const touchStartYRef = useRef<number | null>(null);
 
     // --- Persistence ---
     useEffect(() => {
@@ -708,6 +709,7 @@ const App: React.FC = () => {
         if (isDevMode) return; // Disable swipe nav in dev mode to prevent conflicts
         touchEndRef.current = null;
         touchStartRef.current = e.targetTouches[0].clientX;
+        touchStartYRef.current = e.targetTouches[0].clientY;
         setIsSwipeActive(true);
         setSwipeOffset(0);
     };
@@ -734,13 +736,28 @@ const App: React.FC = () => {
         }
     };
 
-    const handleTouchEnd = () => {
+    const handleTouchEnd = (e: React.TouchEvent) => {
         if (isDevMode) return;
-        if (!touchStartRef.current || !touchEndRef.current) return;
+        if (
+            !touchStartRef.current ||
+            !touchEndRef.current ||
+            touchStartYRef.current === null
+        )
+            return;
 
         const distance = touchStartRef.current - touchEndRef.current;
-        const isLeftSwipe = distance > 50;
-        const isRightSwipe = distance < -50;
+        const currentY = touchStartYRef.current;
+        const endY = e.changedTouches?.[0]?.clientY ?? currentY;
+        const deltaY = currentY - endY;
+        const absX = Math.abs(distance);
+        const absY = Math.abs(deltaY);
+
+        // angle proche de 90° = mouvement horizontal dominant même si faible
+        const isMostlyHorizontal = absX >= absY * 1.5;
+        const threshold = isMostlyHorizontal ? 20 : 50;
+
+        const isLeftSwipe = distance > threshold;
+        const isRightSwipe = distance < -threshold;
         const visiblePages = visiblePageMapping;
         const currentMapIndex = visiblePages.indexOf(currentPageIndex);
 
@@ -755,6 +772,7 @@ const App: React.FC = () => {
 
         touchStartRef.current = null;
         touchEndRef.current = null;
+        touchStartYRef.current = null;
     };
 
     // --- Render ---

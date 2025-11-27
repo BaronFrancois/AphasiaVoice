@@ -32,7 +32,7 @@ export const useButtonPress = (config: ButtonPressConfig): ButtonPressHandlers =
     onPressStart,
     onPressEnd,
     onPressCancel,
-    minPressDuration = 20, // Default 100ms for better reactivity
+    minPressDuration = 0, // Fire immediately on touch/effleurement
     moveThreshold = 30, // 30px horizontal threshold
     verticalTolerance = 0.7 // 70% more tolerance for downward movement
   } = config;
@@ -71,19 +71,27 @@ export const useButtonPress = (config: ButtonPressConfig): ButtonPressHandlers =
       onPressStart();
     }
 
-    // Start timer for minimum press duration
-    pressTimerRef.current = setTimeout(() => {
-      if (!hasMovedTooMuchRef.current) {
-        isPressValidRef.current = true;
-        // Light haptic feedback to indicate press is being registered
-        triggerHapticFeedback(30);
-        // Fire immediately after validation to reduce perceived lag
-        if (onPress && !hasFiredRef.current) {
-          hasFiredRef.current = true;
-          onPress();
+    // Fire immediately to garantir l'effleurement
+    isPressValidRef.current = true;
+    if (onPress && !hasFiredRef.current) {
+      hasFiredRef.current = true;
+      onPress();
+    }
+    // Optional light haptic even on instant press
+    triggerHapticFeedback(30);
+
+    // Keep a minimal timer path if configured (for compatibility)
+    if (minPressDuration > 0) {
+      pressTimerRef.current = setTimeout(() => {
+        if (!hasMovedTooMuchRef.current) {
+          isPressValidRef.current = true;
+          if (onPress && !hasFiredRef.current) {
+            hasFiredRef.current = true;
+            onPress();
+          }
         }
-      }
-    }, minPressDuration);
+      }, minPressDuration);
+    }
   }, [minPressDuration, onPressStart, triggerHapticFeedback, onPress]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {

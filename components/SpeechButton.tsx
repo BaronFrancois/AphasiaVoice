@@ -61,8 +61,9 @@ const SpeechButton: React.FC<SpeechButtonProps> = ({
   const buttonPressHandlers = useButtonPress({
     onPress: speakMessage,
     onPressStart: () => setIsPressing(true),
+    onPressEnd: () => setIsPressing(false),
     onPressCancel: () => setIsPressing(false),
-    minPressDuration: 100, // 100ms for better reactivity
+    minPressDuration: 60, // ultra-réactif pour valider quasi immédiatement
     moveThreshold: 30,
     verticalTolerance: 0.7 // Allow 70% more downward movement
   });

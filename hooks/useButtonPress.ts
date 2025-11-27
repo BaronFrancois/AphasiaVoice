@@ -3,6 +3,7 @@ import { useRef, useCallback } from 'react';
 export interface ButtonPressConfig {
   onPress?: () => void;
   onPressStart?: () => void;
+  onPressEnd?: () => void;
   onPressCancel?: () => void;
   minPressDuration?: number; // milliseconds
   moveThreshold?: number; // pixels
@@ -29,6 +30,7 @@ export const useButtonPress = (config: ButtonPressConfig): ButtonPressHandlers =
   const {
     onPress,
     onPressStart,
+    onPressEnd,
     onPressCancel,
     minPressDuration = 20, // Default 100ms for better reactivity
     moveThreshold = 30, // 30px horizontal threshold
@@ -39,6 +41,7 @@ export const useButtonPress = (config: ButtonPressConfig): ButtonPressHandlers =
   const startPosRef = useRef<{ x: number; y: number } | null>(null);
   const isPressValidRef = useRef(false);
   const hasMovedTooMuchRef = useRef(false);
+  const hasFiredRef = useRef(false);
 
   const clearPressTimer = useCallback(() => {
     if (pressTimerRef.current) {
@@ -61,6 +64,7 @@ export const useButtonPress = (config: ButtonPressConfig): ButtonPressHandlers =
     startPosRef.current = { x: e.clientX, y: e.clientY };
     isPressValidRef.current = false;
     hasMovedTooMuchRef.current = false;
+    hasFiredRef.current = false;
 
     // Trigger press start callback
     if (onPressStart) {
@@ -73,9 +77,14 @@ export const useButtonPress = (config: ButtonPressConfig): ButtonPressHandlers =
         isPressValidRef.current = true;
         // Light haptic feedback to indicate press is being registered
         triggerHapticFeedback(30);
+        // Fire immediately after validation to reduce perceived lag
+        if (onPress && !hasFiredRef.current) {
+          hasFiredRef.current = true;
+          onPress();
+        }
       }
     }, minPressDuration);
-  }, [minPressDuration, onPressStart, triggerHapticFeedback]);
+  }, [minPressDuration, onPressStart, triggerHapticFeedback, onPress]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!startPosRef.current) return;
@@ -108,8 +117,10 @@ export const useButtonPress = (config: ButtonPressConfig): ButtonPressHandlers =
 
     clearPressTimer();
 
+    const pressWasValid = isPressValidRef.current && !hasMovedTooMuchRef.current;
+
     // Only trigger press if it was validated
-    if (isPressValidRef.current && !hasMovedTooMuchRef.current && onPress) {
+    if (pressWasValid && onPress && !hasFiredRef.current) {
       // Success haptic feedback
       triggerHapticFeedback(50);
       onPress();
@@ -125,11 +136,16 @@ export const useButtonPress = (config: ButtonPressConfig): ButtonPressHandlers =
       // triggerHapticFeedback([30, 50, 30]);
     }
 
+    if (onPressEnd) {
+      onPressEnd();
+    }
+
     // Reset refs
     startPosRef.current = null;
     isPressValidRef.current = false;
     hasMovedTooMuchRef.current = false;
-  }, [clearPressTimer, onPress, onPressCancel, triggerHapticFeedback]);
+    hasFiredRef.current = false;
+  }, [clearPressTimer, onPress, onPressCancel, triggerHapticFeedback, onPressEnd]);
 
   const handlePointerCancel = useCallback((e: React.PointerEvent) => {
     // Release pointer capture
@@ -142,12 +158,16 @@ export const useButtonPress = (config: ButtonPressConfig): ButtonPressHandlers =
     if (onPressCancel) {
       onPressCancel();
     }
+    if (onPressEnd) {
+      onPressEnd();
+    }
 
     // Reset refs
     startPosRef.current = null;
     isPressValidRef.current = false;
     hasMovedTooMuchRef.current = false;
-  }, [clearPressTimer, onPressCancel]);
+    hasFiredRef.current = false;
+  }, [clearPressTimer, onPressCancel, onPressEnd]);
 
   return {
     onPointerDown: handlePointerDown,

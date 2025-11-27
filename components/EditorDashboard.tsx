@@ -68,7 +68,12 @@ const Pill: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </span>
 );
 
-const EditorDashboard: React.FC = () => {
+interface EditorDashboardProps {
+  onExit: () => void;
+  onOpenBoard?: () => void;
+}
+
+const EditorDashboard: React.FC<EditorDashboardProps> = ({ onExit, onOpenBoard }) => {
   const [motor, setMotor] = useState(4);
   const [comp, setComp] = useState(7);
 
@@ -80,7 +85,11 @@ const EditorDashboard: React.FC = () => {
         {/* Top bar */}
         <header className="sticky top-0 z-20">
           <div className="rounded-2xl bg-gradient-to-r from-slate-900/80 to-slate-800/60 border border-slate-700 px-3 py-3 flex items-center justify-between shadow-lg backdrop-blur">
-            <button className="p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition">
+            <button
+              className="p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-700 active:scale-95 transition"
+              onClick={onExit}
+              aria-label="Quitter le mode modifieur"
+            >
               <ArrowLeft size={22} />
             </button>
             <div className="text-center leading-tight">
@@ -214,10 +223,16 @@ const EditorDashboard: React.FC = () => {
           subtitle="Accès rapide à la gestion des tuiles."
         >
           <div className="grid grid-cols-1 gap-2">
-            <button className="w-full rounded-2xl bg-slate-800 text-slate-100 font-semibold py-3 px-4 border border-slate-700 active:scale-97 transition">
+            <button
+              className="w-full rounded-2xl bg-slate-800 text-slate-100 font-semibold py-3 px-4 border border-slate-700 active:scale-97 transition"
+              onClick={onOpenBoard}
+            >
               Gérer les tuiles
             </button>
-            <button className="w-full rounded-2xl bg-slate-800 text-slate-100 font-semibold py-3 px-4 border border-slate-700 active:scale-97 transition">
+            <button
+              className="w-full rounded-2xl bg-slate-800 text-slate-100 font-semibold py-3 px-4 border border-slate-700 active:scale-97 transition"
+              onClick={onOpenBoard}
+            >
               Prévisualiser l’UI pour ce profil
             </button>
           </div>

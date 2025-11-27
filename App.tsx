@@ -8,6 +8,7 @@ import {
 import { QuickWord } from "./types";
 import SpeechButton from "./components/SpeechButton";
 import NavBar from "./components/NavBar";
+import EditorDashboard from "./components/EditorDashboard";
 import {
     Settings,
     X,
@@ -48,6 +49,7 @@ const App: React.FC = () => {
     // -- Edit / Dev Mode State --
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [isDevMode, setIsDevMode] = useState(false);
+    const [showEditorDashboard, setShowEditorDashboard] = useState(false);
     const [draftPages, setDraftPages] = useState<QuickWord[][]>(INITIAL_PAGES);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
     const [showAddTileModal, setShowAddTileModal] = useState(false);
@@ -332,10 +334,22 @@ const App: React.FC = () => {
             setUnlockStep("slide");
             setDraftPages(JSON.parse(JSON.stringify(pages)));
             setIsDevMode(true);
+            setShowEditorDashboard(true);
         } else {
             alert("Code incorrect");
             setPasswordInput("");
         }
+    };
+
+    const exitModifierMode = () => {
+        setIsDevMode(false);
+        setShowEditorDashboard(false);
+        setShowExitConfirm(false);
+        setShowAddTileModal(false);
+    };
+
+    const goToBoardEditor = () => {
+        setShowEditorDashboard(false);
     };
 
     const handleSaveAndExit = () => {
@@ -526,6 +540,15 @@ const App: React.FC = () => {
             </div>
         );
     };
+
+    if (isDevMode && showEditorDashboard) {
+        return (
+            <EditorDashboard
+                onExit={exitModifierMode}
+                onOpenBoard={goToBoardEditor}
+            />
+        );
+    }
 
     return (
         <div

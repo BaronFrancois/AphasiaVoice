@@ -13,6 +13,8 @@ import {
     Smartphone,
     Tablet,
     Monitor,
+    BarChart3,
+    Clock3,
 } from "lucide-react";
 
 const MAX_WIDTH = "max-w-[420px]";
@@ -25,6 +27,16 @@ export type HistoryEntry = {
     tileLabel: string;
     pageIndex: number;
     timestamp: number;
+    pressDurationMs?: number;
+    releasedAt?: number;
+};
+
+export type TileUsageStat = {
+    tileId?: string;
+    label: string;
+    count: number;
+    lastUsed: number;
+    avgDurationMs?: number;
 };
 
 interface EditorDashboardProps {
@@ -46,6 +58,7 @@ interface EditorDashboardProps {
     onMetaChange: (field: "firstName" | "lastName", value: string) => void;
     viewMode: ViewMode;
     onChangeViewMode: (mode: ViewMode) => void;
+    tileUsageStats?: TileUsageStat[];
 }
 
 const Card: React.FC<{
@@ -109,6 +122,12 @@ const formatDate = (ts: number) => {
     return d.toLocaleString();
 };
 
+const formatDuration = (ms?: number) => {
+    if (ms === undefined) return "n/a";
+    if (ms < 1000) return `${Math.max(0, ms).toFixed(0)} ms`;
+    return `${(ms / 1000).toFixed(1)} s`;
+};
+
 const EditorDashboard: React.FC<EditorDashboardProps> = ({
     onExit,
     onOpenBoard,
@@ -128,6 +147,7 @@ const EditorDashboard: React.FC<EditorDashboardProps> = ({
     onMetaChange,
     viewMode,
     onChangeViewMode,
+    tileUsageStats = [],
 }) => {
     const importHistoryRef = useRef<HTMLInputElement | null>(null);
     const importAllRef = useRef<HTMLInputElement | null>(null);
@@ -136,6 +156,28 @@ const EditorDashboard: React.FC<EditorDashboardProps> = ({
         const slice = history.slice(-5);
         return slice.reverse();
     }, [history]);
+
+    const topTiles = useMemo(
+        () => (tileUsageStats || []).slice(0, 5),
+        [tileUsageStats]
+    );
+
+    const totalPresses = useMemo(
+        () => (tileUsageStats || []).reduce((sum, stat) => sum + stat.count, 0),
+        [tileUsageStats]
+    );
+
+    const averagePressDuration = useMemo(() => {
+        const entriesWithDuration = (tileUsageStats || []).filter(
+            (stat) => stat.avgDurationMs !== undefined
+        );
+        if (entriesWithDuration.length === 0) return undefined;
+        const totalDuration = entriesWithDuration.reduce(
+            (sum, stat) => sum + (stat.avgDurationMs || 0),
+            0
+        );
+        return totalDuration / entriesWithDuration.length;
+    }, [tileUsageStats]);
 
     const paddingBottom = showFooterAction ? "pb-28" : "pb-16";
 
@@ -331,6 +373,91 @@ const EditorDashboard: React.FC<EditorDashboardProps> = ({
                                     </div>
                                 ))}
                             </div>
+                        </div>
+                    </div>
+                </Card>
+
+                {/* Statistiques */}
+                <Card
+                    title="Statistiques d'usage"
+                    icon={<BarChart3 size={18} />}
+                    subtitle="Bas�� sur l'historique local des pressions."
+                >
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            <div className="rounded-xl bg-slate-800/70 border border-slate-700 px-3 py-2">
+                                <div className="text-xs text-slate-400 uppercase tracking-wide">
+                                    Touches totales
+                                </div>
+                                <div className="text-xl font-semibold text-white">
+                                    {totalPresses}
+                                </div>
+                            </div>
+                            <div className="rounded-xl bg-slate-800/70 border border-slate-700 px-3 py-2">
+                                <div className="text-xs text-slate-400 uppercase tracking-wide">
+                                    Tuiles distinctes
+                                </div>
+                                <div className="text-xl font-semibold text-white">
+                                    {tileUsageStats.length}
+                                </div>
+                            </div>
+                            <div className="rounded-xl bg-slate-800/70 border border-slate-700 px-3 py-2">
+                                <div className="text-xs text-slate-400 uppercase tracking-wide flex items-center gap-1">
+                                    <Clock3 size={14} /> Dur��e moyenne
+                                </div>
+                                <div className="text-xl font-semibold text-white">
+                                    {formatDuration(averagePressDuration)}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="space-y-3">
+                            <div className="text-xs uppercase text-slate-500 font-semibold tracking-wide">
+                                Tuiles les plus utilis��es
+                            </div>
+                            {topTiles.length === 0 ? (
+                                <div className="text-sm text-slate-500">
+                                    Pas encore de donn��es.
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {topTiles.map((tile, idx) => {
+                                        const maxCount = topTiles[0]?.count || 1;
+                                        const ratio = Math.min(
+                                            100,
+                                            Math.round(
+                                                (tile.count / maxCount) * 100
+                                            )
+                                        );
+                                        return (
+                                            <div
+                                                key={`${tile.tileId || tile.label}-${idx}`}
+                                                className="space-y-1"
+                                            >
+                                                <div className="flex items-center justify-between text-sm text-slate-200">
+                                                    <span className="font-semibold">
+                                                        {tile.label}
+                                                    </span>
+                                                    <span className="text-slate-400 text-xs">
+                                                        {tile.count} utilisations
+                                                    </span>
+                                                </div>
+                                                <div className="h-3 rounded-full bg-slate-800 overflow-hidden border border-slate-700">
+                                                    <div
+                                                        className="h-full bg-gradient-to-r from-cyan-400 via-sky-500 to-blue-600 transition-all"
+                                                        style={{ width: `${ratio}%` }}
+                                                    />
+                                                </div>
+                                                {tile.avgDurationMs !== undefined && (
+                                                    <div className="text-[11px] text-slate-400 flex items-center gap-1">
+                                                        <Clock3 size={12} />
+                                                        Dur��e moy. {formatDuration(tile.avgDurationMs)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </Card>

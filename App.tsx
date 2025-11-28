@@ -8,7 +8,11 @@ import {
 import { QuickWord } from "./types";
 import SpeechButton from "./components/SpeechButton";
 import NavBar from "./components/NavBar";
-import EditorDashboard, { HistoryEntry } from "./components/EditorDashboard";
+import EditorDashboard, {
+    HistoryEntry,
+    type TileUsageStat,
+} from "./components/EditorDashboard";
+import type { PressLifecycleData } from "./hooks/useButtonPress";
 import {
     Settings,
     X,
@@ -268,6 +272,53 @@ const App: React.FC = () => {
         return indices;
     }, [isDevMode, pages, draftPages]);
 
+    const tileUsageStats = useMemo<TileUsageStat[]>(() => {
+        const map = new Map<
+            string,
+            {
+                tileId?: string;
+                label: string;
+                count: number;
+                lastUsed: number;
+                totalDuration: number;
+            }
+        >();
+
+        history.forEach((entry) => {
+            const key = entry.tileId || entry.tileLabel;
+            const existing =
+                map.get(key) || {
+                    tileId: entry.tileId,
+                    label: entry.tileLabel,
+                    count: 0,
+                    lastUsed: 0,
+                    totalDuration: 0,
+                };
+            existing.count += 1;
+            existing.lastUsed = Math.max(existing.lastUsed, entry.timestamp);
+            if (entry.pressDurationMs) {
+                existing.totalDuration += entry.pressDurationMs;
+            }
+            if (!existing.tileId && entry.tileId) {
+                existing.tileId = entry.tileId;
+            }
+            map.set(key, existing);
+        });
+
+        return Array.from(map.values())
+            .map((stat) => ({
+                tileId: stat.tileId,
+                label: stat.label,
+                count: stat.count,
+                lastUsed: stat.lastUsed,
+                avgDurationMs:
+                    stat.totalDuration > 0 && stat.count > 0
+                        ? stat.totalDuration / stat.count
+                        : undefined,
+            }))
+            .sort((a, b) => b.count - a.count);
+    }, [history]);
+
     const getCurrentDraftPage = () => {
         return currentPageIndex < draftPages.length
             ? draftPages[currentPageIndex]
@@ -297,7 +348,10 @@ const App: React.FC = () => {
         return `tile-${next}`;
     };
 
-    const addHistoryEntry = (tile: QuickWord) => {
+    const addHistoryEntry = (
+        tile: QuickWord,
+        pressInfo?: PressLifecycleData
+    ) => {
         if (isDevMode) return;
         setHistory((prev) => {
             const entry: HistoryEntry = {
@@ -305,7 +359,9 @@ const App: React.FC = () => {
                 tileId: tile.id,
                 tileLabel: tile.label,
                 pageIndex: currentPageIndex,
-                timestamp: Date.now(),
+                timestamp: pressInfo?.startedAt || Date.now(),
+                pressDurationMs: pressInfo?.durationMs,
+                releasedAt: pressInfo?.endedAt,
             };
             const next = [...prev, entry];
             const bytes = estimateBytes(next);
@@ -942,6 +998,7 @@ const App: React.FC = () => {
                         onMetaChange={handleMetaChange}
                         viewMode={viewMode}
                         onChangeViewMode={setViewMode}
+                        tileUsageStats={tileUsageStats}
                     />
                 </div>
             ) : (
@@ -1027,7 +1084,8 @@ const App: React.FC = () => {
                                 onResize={() => resizeTile(tile.id)}
                                 onUse={
                                     !isDevMode
-                                        ? () => addHistoryEntry(tile)
+                                        ? (metrics) =>
+                                              addHistoryEntry(tile, metrics)
                                         : undefined
                                 }
                                 onPointerDown={handlePointerDown}
@@ -1057,33 +1115,51 @@ const App: React.FC = () => {
                             Appuyer pour ajouter
                         </span>
                     </div>
-                    <div className="flex gap-3 overflow-x-auto pb-2 px-1 scrollbar-hide">
-                        {PRESET_TILES.map((preset, idx) => {
-                            const PresetIcon = getIconComponent(
-                                preset.iconName
-                            );
-                            return (
-                                <div
-                                    key={idx}
-                                    onClick={() => addPresetToPage(preset)}
-                                    className="shrink-0 w-20 h-20 bg-slate-800 rounded-xl flex flex-col items-center justify-center cursor-pointer active:scale-95 hover:bg-slate-700 border border-slate-700 hover:border-sky-500/50 transition-all shadow-md"
-                                >
-                                    {PresetIcon && (
-                                        <PresetIcon
-                                            size={24}
-                                            className={`${
-                                                preset.text === "text-black"
-                                                    ? "text-yellow-500"
-                                                    : "text-slate-300"
-                                            } mb-1`}
-                                        />
-                                    )}
-                                    <span className="text-[10px] font-bold text-slate-300 uppercase truncate w-full text-center px-1">
-                                        {preset.label}
-                                    </span>
+                    <div className="flex flex-col gap-4">
+                        {Object.entries(
+                            PRESET_TILES.reduce<Record<string, typeof PRESET_TILES>>(
+                                (acc, item) => {
+                                    const cat = item.category || "Divers";
+                                    acc[cat] = acc[cat] ? [...acc[cat], item] : [item];
+                                    return acc;
+                                },
+                                {}
+                            )
+                        ).map(([category, items]) => (
+                            <div key={category} className="space-y-2">
+                                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">
+                                    {category}
                                 </div>
-                            );
-                        })}
+                                <div className="flex gap-3 overflow-x-auto pb-2 px-1 scrollbar-hide">
+                                    {items.map((preset, idx) => {
+                                        const PresetIcon = getIconComponent(
+                                            preset.iconName
+                                        );
+                                        return (
+                                            <div
+                                                key={`${category}-${idx}-${preset.label}`}
+                                                onClick={() => addPresetToPage(preset)}
+                                                className="shrink-0 w-20 h-20 bg-slate-800 rounded-xl flex flex-col items-center justify-center cursor-pointer active:scale-95 hover:bg-slate-700 border border-slate-700 hover:border-sky-500/50 transition-all shadow-md"
+                                            >
+                                                {PresetIcon && (
+                                                    <PresetIcon
+                                                        size={24}
+                                                        className={`${
+                                                            preset.text === "text-black"
+                                                                ? "text-yellow-500"
+                                                                : "text-slate-300"
+                                                        } mb-1`}
+                                                    />
+                                                )}
+                                                <span className="text-[10px] font-bold text-slate-300 uppercase truncate w-full text-center px-1">
+                                                    {preset.label}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             )}

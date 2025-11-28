@@ -5,6 +5,7 @@ export interface ButtonPressConfig {
   onPressStart?: () => void;
   onPressEnd?: () => void;
   onPressCancel?: () => void;
+  onPressComplete?: (data: PressLifecycleData) => void;
   minPressDuration?: number; // milliseconds
   moveThreshold?: number; // pixels
   verticalTolerance?: number; // ratio (0-1), allows some vertical drift
@@ -15,6 +16,14 @@ export interface ButtonPressHandlers {
   onPointerMove: (e: React.PointerEvent) => void;
   onPointerUp: (e: React.PointerEvent) => void;
   onPointerCancel: (e: React.PointerEvent) => void;
+}
+
+export interface PressLifecycleData {
+  startedAt: number;
+  endedAt: number;
+  durationMs: number;
+  valid: boolean;
+  triggered: boolean;
 }
 
 /**
@@ -32,6 +41,7 @@ export const useButtonPress = (config: ButtonPressConfig): ButtonPressHandlers =
     onPressStart,
     onPressEnd,
     onPressCancel,
+    onPressComplete,
     minPressDuration = 0, // Fire immediately on touch/effleurement
     moveThreshold = 30, // 30px horizontal threshold
     verticalTolerance = 0.7 // 70% more tolerance for downward movement
@@ -39,6 +49,7 @@ export const useButtonPress = (config: ButtonPressConfig): ButtonPressHandlers =
 
   const pressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startPosRef = useRef<{ x: number; y: number } | null>(null);
+  const startTimeRef = useRef<number | null>(null);
   const isPressValidRef = useRef(false);
   const hasMovedTooMuchRef = useRef(false);
   const hasFiredRef = useRef(false);
@@ -62,6 +73,7 @@ export const useButtonPress = (config: ButtonPressConfig): ButtonPressHandlers =
 
     // Store initial position
     startPosRef.current = { x: e.clientX, y: e.clientY };
+    startTimeRef.current = Date.now();
     isPressValidRef.current = false;
     hasMovedTooMuchRef.current = false;
     hasFiredRef.current = false;
@@ -126,6 +138,9 @@ export const useButtonPress = (config: ButtonPressConfig): ButtonPressHandlers =
     clearPressTimer();
 
     const pressWasValid = isPressValidRef.current && !hasMovedTooMuchRef.current;
+    const endedAt = Date.now();
+    const startedAt = startTimeRef.current ?? endedAt;
+    const durationMs = Math.max(0, endedAt - startedAt);
 
     // Only trigger press if it was validated
     if (pressWasValid && onPress && !hasFiredRef.current) {
@@ -144,12 +159,23 @@ export const useButtonPress = (config: ButtonPressConfig): ButtonPressHandlers =
       // triggerHapticFeedback([30, 50, 30]);
     }
 
+    if (onPressComplete) {
+      onPressComplete({
+        startedAt,
+        endedAt,
+        durationMs,
+        valid: pressWasValid,
+        triggered: hasFiredRef.current
+      });
+    }
+
     if (onPressEnd) {
       onPressEnd();
     }
 
     // Reset refs
     startPosRef.current = null;
+    startTimeRef.current = null;
     isPressValidRef.current = false;
     hasMovedTooMuchRef.current = false;
     hasFiredRef.current = false;
@@ -163,6 +189,18 @@ export const useButtonPress = (config: ButtonPressConfig): ButtonPressHandlers =
 
     clearPressTimer();
 
+    if (onPressComplete) {
+      const endedAt = Date.now();
+      const startedAt = startTimeRef.current ?? endedAt;
+      onPressComplete({
+        startedAt,
+        endedAt,
+        durationMs: Math.max(0, endedAt - startedAt),
+        valid: false,
+        triggered: hasFiredRef.current
+      });
+    }
+
     if (onPressCancel) {
       onPressCancel();
     }
@@ -172,6 +210,7 @@ export const useButtonPress = (config: ButtonPressConfig): ButtonPressHandlers =
 
     // Reset refs
     startPosRef.current = null;
+    startTimeRef.current = null;
     isPressValidRef.current = false;
     hasMovedTooMuchRef.current = false;
     hasFiredRef.current = false;

@@ -1,4 +1,4 @@
-import { Check, X, GlassWater, Accessibility, Activity, Moon, Utensils, ThumbsUp, ThumbsDown, HelpCircle, Tv, Home, Phone, Heart, Star, Music, User, Car, Plane, Book, Gamepad2, Coffee, Sun, Cloud, Hand, Smile, Frown, LogOut, ArrowRightCircle } from 'lucide-react';
+import { Check, X, GlassWater, Accessibility, Activity, Moon, Utensils, UtensilsCrossed, ThumbsUp, ThumbsDown, HelpCircle, Tv, Home, Phone, Heart, Star, Music, User, Car, Plane, Book, Gamepad2, Coffee, Sun, Cloud, Hand, Smile, Frown, LogOut, ArrowRightCircle, Clapperboard, Candy, Cookie, IceCream, CakeSlice } from 'lucide-react';
 import { QuickWord } from './types';
 
 // Available icons for the picker
@@ -7,15 +7,21 @@ export const AVAILABLE_ICONS = [
   { id: 'thumbs-down', icon: ThumbsDown, label: 'Pouce bas' },
   { id: 'home', icon: Home, label: 'Maison' },
   { id: 'user', icon: User, label: 'Personne' },
-  { id: 'heart', icon: Heart, label: 'Cœur' },
+  { id: 'heart', icon: Heart, label: 'Coeur' },
   { id: 'star', icon: Star, label: 'Etoile' },
   { id: 'tv', icon: Tv, label: 'TV' },
-  { id: 'phone', icon: Phone, label: 'Téléphone' },
+  { id: 'cinema', icon: Clapperboard, label: 'Cinema' },
+  { id: 'phone', icon: Phone, label: 'Telephone' },
   { id: 'music', icon: Music, label: 'Musique' },
   { id: 'book', icon: Book, label: 'Livre' },
   { id: 'game', icon: Gamepad2, label: 'Jeu' },
   { id: 'car', icon: Car, label: 'Voiture' },
-  { id: 'coffee', icon: Coffee, label: 'Café' },
+  { id: 'restaurant', icon: UtensilsCrossed || Utensils, label: 'Restaurant' },
+  { id: 'coffee', icon: Coffee, label: 'Cafe' },
+  { id: 'candy', icon: Candy, label: 'Bonbon' },
+  { id: 'chocolate', icon: Cookie, label: 'Chocolat' },
+  { id: 'cake', icon: CakeSlice, label: 'Gateau' },
+  { id: 'ice-cream', icon: IceCream, label: 'Glace' },
   { id: 'sun', icon: Sun, label: 'Soleil' },
   { id: 'cloud', icon: Cloud, label: 'Nuage' },
   { id: 'glass', icon: GlassWater, label: 'Eau' },
@@ -140,26 +146,38 @@ export const BINARY_OPTIONS: QuickWord[] = [];
 // - Rose/Rouge = émotions
 export const PRESET_TILES = [
   // Positif
-  { label: 'OUI', speak: 'Oui', iconName: 'thumbs-up', color: 'green', bg: 'bg-green-600', text: 'text-white' },
-  { label: 'CONTENT', speak: 'Je suis content', iconName: 'happy', color: 'green', bg: 'bg-green-600', text: 'text-white' },
-  { label: 'MERCI', speak: 'Merci', iconName: 'happy', color: 'green', bg: 'bg-green-600', text: 'text-white' },
+  { label: 'OUI', speak: 'Oui', iconName: 'thumbs-up', color: 'green', bg: 'bg-green-600', text: 'text-white', category: 'Positif' },
+  { label: 'CONTENT', speak: 'Je suis content', iconName: 'happy', color: 'green', bg: 'bg-green-600', text: 'text-white', category: 'Positif' },
+  { label: 'MERCI', speak: 'Merci', iconName: 'happy', color: 'green', bg: 'bg-green-600', text: 'text-white', category: 'Positif' },
 
-  // Négatif / Danger
-  { label: 'NON', speak: 'Non', iconName: 'thumbs-down', color: 'red', bg: 'bg-red-600', text: 'text-white' },
-  { label: 'STOP', speak: 'Stop', iconName: 'stop', color: 'red', bg: 'bg-red-600', text: 'text-white' },
-  { label: 'DOULEUR', speak: 'J\'ai mal', iconName: 'pain', color: 'red', bg: 'bg-red-600', text: 'text-white' },
+  // Negatif / Danger
+  { label: 'NON', speak: 'Non', iconName: 'thumbs-down', color: 'red', bg: 'bg-red-600', text: 'text-white', category: 'Danger' },
+  { label: 'STOP', speak: 'Stop', iconName: 'stop', color: 'red', bg: 'bg-red-600', text: 'text-white', category: 'Danger' },
+  { label: 'DOULEUR', speak: 'J'ai mal', iconName: 'pain', color: 'red', bg: 'bg-red-600', text: 'text-white', category: 'Danger' },
 
   // Besoins physiques
-  { label: 'BOIRE', speak: 'Je veux boire', iconName: 'glass', color: 'blue', bg: 'bg-blue-600', text: 'text-white' },
-  { label: 'MANGER', speak: 'Je veux manger', iconName: 'food', color: 'blue', bg: 'bg-blue-600', text: 'text-white' },
-  { label: 'TOILETTES', speak: 'Toilettes', iconName: 'toilet', color: 'blue', bg: 'bg-blue-600', text: 'text-white' },
+  { label: 'BOIRE', speak: 'Je veux boire', iconName: 'glass', color: 'blue', bg: 'bg-blue-600', text: 'text-white', category: 'Besoins' },
+  { label: 'MANGER', speak: 'Je veux manger', iconName: 'food', color: 'blue', bg: 'bg-blue-600', text: 'text-white', category: 'Besoins' },
+  { label: 'TOILETTES', speak: 'Toilettes', iconName: 'toilet', color: 'blue', bg: 'bg-blue-600', text: 'text-white', category: 'Besoins' },
 
   // Information
-  { label: 'AIDE', speak: 'Aidez-moi', iconName: 'help', color: 'yellow', bg: 'bg-yellow-500', text: 'text-black' },
-  { label: 'BONJOUR', speak: 'Bonjour', iconName: 'hand', color: 'yellow', bg: 'bg-yellow-500', text: 'text-black' },
+  { label: 'AIDE', speak: 'Aidez-moi', iconName: 'help', color: 'yellow', bg: 'bg-yellow-500', text: 'text-black', category: 'Information' },
+  { label: 'BONJOUR', speak: 'Bonjour', iconName: 'hand', color: 'yellow', bg: 'bg-yellow-500', text: 'text-black', category: 'Information' },
 
-  // Émotions
-  { label: 'TRISTE', speak: 'Je suis triste', iconName: 'sad', color: 'rose', bg: 'bg-rose-600', text: 'text-white' },
-  { label: 'JE T\'AIME', speak: 'Je t\'aime', iconName: 'heart', color: 'pink', bg: 'bg-pink-600', text: 'text-white' },
-  { label: 'FATIGUÉ', speak: 'Je suis fatigué', iconName: 'bed', color: 'indigo', bg: 'bg-indigo-600', text: 'text-white' },
+  // Emotions
+  { label: 'TRISTE', speak: 'Je suis triste', iconName: 'sad', color: 'rose', bg: 'bg-rose-600', text: 'text-white', category: 'Emotions' },
+  { label: 'JE T'AIME', speak: 'Je t'aime', iconName: 'heart', color: 'pink', bg: 'bg-pink-600', text: 'text-white', category: 'Emotions' },
+  { label: 'FATIGUE', speak: 'Je suis fatigue', iconName: 'bed', color: 'indigo', bg: 'bg-indigo-600', text: 'text-white', category: 'Emotions' },
+
+  // Vie courante
+  { label: 'RESTAURANT', speak: 'Aller au restaurant', iconName: 'restaurant', color: 'orange', bg: 'bg-orange-600', text: 'text-white', category: 'Vie courante' },
+  { label: 'CINEMA', speak: 'Aller au cinema', iconName: 'cinema', color: 'purple', bg: 'bg-purple-600', text: 'text-white', category: 'Vie courante' },
+  { label: 'TV', speak: 'Regarder la television', iconName: 'tv', color: 'blue', bg: 'bg-blue-700', text: 'text-white', category: 'Vie courante' },
+  { label: 'LIVRE', speak: 'Lire un livre', iconName: 'book', color: 'slate', bg: 'bg-slate-700', text: 'text-white', category: 'Vie courante' },
+
+  // Gourmandises
+  { label: 'BONBON', speak: 'Je veux un bonbon', iconName: 'candy', color: 'pink', bg: 'bg-pink-600', text: 'text-white', category: 'Gourmandises' },
+  { label: 'CHOCOLAT', speak: 'Je veux du chocolat', iconName: 'chocolate', color: 'amber', bg: 'bg-amber-600', text: 'text-white', category: 'Gourmandises' },
+  { label: 'GATEAU', speak: 'Je veux du gateau', iconName: 'cake', color: 'yellow', bg: 'bg-yellow-500', text: 'text-black', category: 'Gourmandises' },
+  { label: 'GLACE', speak: 'Je veux une glace', iconName: 'ice-cream', color: 'cyan', bg: 'bg-cyan-500', text: 'text-black', category: 'Gourmandises' },
 ];

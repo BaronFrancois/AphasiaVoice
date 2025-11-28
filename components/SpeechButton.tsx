@@ -50,15 +50,26 @@ const SpeechButton: React.FC<SpeechButtonProps> = ({
 
   // Speech synthesis function
   const speakMessage = useCallback(() => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
     if (onClickAnimation) onClickAnimation();
     if (onUse) onUse();
+
+    const synth = window.speechSynthesis;
+    // Force voices resolution on iOS/Safari
+    const availableVoices = synth.getVoices();
+    const frenchVoice = availableVoices.find(
+      (voice) => voice.lang?.toLowerCase().startsWith('fr')
+    );
 
     const utterance = new SpeechSynthesisUtterance(speakText);
     utterance.lang = 'fr-FR';
     utterance.rate = 0.9;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
-  }, [speakText, onClickAnimation]);
+    if (frenchVoice) utterance.voice = frenchVoice;
+
+    synth.cancel();
+    synth.speak(utterance);
+  }, [speakText, onClickAnimation, onUse]);
 
   // Button press handlers with tremor filtering and haptic feedback
   const buttonPressHandlers = useButtonPress({

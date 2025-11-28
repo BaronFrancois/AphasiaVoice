@@ -67,6 +67,47 @@ const App: React.FC = () => {
     });
     const [viewMode, setViewMode] = useState<ViewMode>("auto");
 
+    // Warm up speech synthesis on first user interaction (mobile Safari blocks it until a gesture)
+    useEffect(() => {
+        if (typeof window === "undefined" || !window.speechSynthesis) return;
+
+        const synth = window.speechSynthesis;
+        const warmup = () => {
+            try {
+                synth.getVoices();
+                const silent = new SpeechSynthesisUtterance(" ");
+                silent.lang = "fr-FR";
+                silent.rate = 0.9;
+                silent.volume = 0;
+                synth.speak(silent);
+                synth.cancel();
+            } catch (error) {
+                console.warn("Speech warmup failed", error);
+            }
+        };
+
+        const handleFirstInteraction = () => warmup();
+
+        window.addEventListener("pointerdown", handleFirstInteraction, {
+            once: true,
+            passive: true,
+        });
+        window.addEventListener("touchstart", handleFirstInteraction, {
+            once: true,
+            passive: true,
+        });
+        window.addEventListener("mousedown", handleFirstInteraction, {
+            once: true,
+            passive: true,
+        });
+
+        return () => {
+            window.removeEventListener("pointerdown", handleFirstInteraction);
+            window.removeEventListener("touchstart", handleFirstInteraction);
+            window.removeEventListener("mousedown", handleFirstInteraction);
+        };
+    }, []);
+
     // -- Edit / Dev Mode State --
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [isDevMode, setIsDevMode] = useState(false);

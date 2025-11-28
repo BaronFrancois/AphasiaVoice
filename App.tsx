@@ -22,6 +22,7 @@ import {
     Plus,
     Layout,
     LogOut,
+    Folder,
 } from "lucide-react";
 
 // Color palette for custom tiles
@@ -131,6 +132,7 @@ const App: React.FC = () => {
     const [newTileColor, setNewTileColor] = useState(TILE_COLORS[2]);
     const [newTileSize, setNewTileSize] = useState<1 | 2>(1);
     const [newTileIcon, setNewTileIcon] = useState<string | null>(null);
+    const [activePresetCategory, setActivePresetCategory] = useState<string>("");
 
     // -- Custom Drag & Drop State --
     const [draggingTile, setDraggingTile] = useState<QuickWord | null>(null);
@@ -318,6 +320,24 @@ const App: React.FC = () => {
             }))
             .sort((a, b) => b.count - a.count);
     }, [history]);
+
+    const presetCategories = useMemo(() => {
+        return PRESET_TILES.reduce<Record<string, typeof PRESET_TILES>>(
+            (acc, item) => {
+                const cat = item.category || "Divers";
+                acc[cat] = acc[cat] ? [...acc[cat], item] : [item];
+                return acc;
+            },
+            {}
+        );
+    }, []);
+
+    useEffect(() => {
+        if (!activePresetCategory) {
+            const first = Object.keys(presetCategories)[0];
+            if (first) setActivePresetCategory(first);
+        }
+    }, [presetCategories, activePresetCategory]);
 
     const getCurrentDraftPage = () => {
         return currentPageIndex < draftPages.length
@@ -1108,58 +1128,66 @@ const App: React.FC = () => {
             {isDevMode && (
                 <div className="shrink-0 bg-slate-950 border-t-2 border-slate-800 p-2 pb-safe z-40 flex flex-col gap-2">
                     <div className="flex items-center justify-between px-2">
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                            Bibliothèque Rapide
-                        </span>
+                        <div className="flex items-center gap-2 text-slate-400">
+                            <Folder size={14} />
+                            <span className="text-xs font-bold uppercase tracking-widest">
+                                Bibliothèque Rapide
+                            </span>
+                        </div>
                         <span className="text-xs text-slate-600">
                             Appuyer pour ajouter
                         </span>
                     </div>
-                    <div className="flex flex-col gap-4">
-                        {Object.entries(
-                            PRESET_TILES.reduce<Record<string, typeof PRESET_TILES>>(
-                                (acc, item) => {
-                                    const cat = item.category || "Divers";
-                                    acc[cat] = acc[cat] ? [...acc[cat], item] : [item];
-                                    return acc;
-                                },
-                                {}
-                            )
-                        ).map(([category, items]) => (
-                            <div key={category} className="space-y-2">
-                                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">
-                                    {category}
-                                </div>
-                                <div className="flex gap-3 overflow-x-auto pb-2 px-1 scrollbar-hide">
-                                    {items.map((preset, idx) => {
-                                        const PresetIcon = getIconComponent(
-                                            preset.iconName
-                                        );
-                                        return (
-                                            <div
-                                                key={`${category}-${idx}-${preset.label}`}
-                                                onClick={() => addPresetToPage(preset)}
-                                                className="shrink-0 w-20 h-20 bg-slate-800 rounded-xl flex flex-col items-center justify-center cursor-pointer active:scale-95 hover:bg-slate-700 border border-slate-700 hover:border-sky-500/50 transition-all shadow-md"
-                                            >
-                                                {PresetIcon && (
-                                                    <PresetIcon
-                                                        size={24}
-                                                        className={`${
-                                                            preset.text === "text-black"
-                                                                ? "text-yellow-500"
-                                                                : "text-slate-300"
-                                                        } mb-1`}
-                                                    />
-                                                )}
-                                                <span className="text-[10px] font-bold text-slate-300 uppercase truncate w-full text-center px-1">
-                                                    {preset.label}
-                                                </span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        ))}
+                    <div className="flex flex-col gap-3">
+                        <div className="flex gap-2 overflow-x-auto pb-1 px-1 scrollbar-hide">
+                            {Object.keys(presetCategories).map((category) => (
+                                <button
+                                    key={category}
+                                    onClick={() => setActivePresetCategory(category)}
+                                    className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold whitespace-nowrap transition ${
+                                        activePresetCategory === category
+                                            ? "border-sky-500 bg-sky-500/10 text-sky-100 shadow"
+                                            : "border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-500"
+                                    }`}
+                                >
+                                    <Folder size={14} />
+                                    <span>{category}</span>
+                                    <span className="text-[10px] text-slate-400">
+                                        {presetCategories[category].length}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                        <div className="flex gap-3 overflow-x-auto pb-2 px-1 scrollbar-hide">
+                            {(presetCategories[activePresetCategory] || []).map(
+                                (preset, idx) => {
+                                    const PresetIcon = getIconComponent(
+                                        preset.iconName
+                                    );
+                                    return (
+                                        <div
+                                            key={`${activePresetCategory}-${idx}-${preset.label}`}
+                                            onClick={() => addPresetToPage(preset)}
+                                            className="shrink-0 w-20 h-20 bg-slate-800 rounded-xl flex flex-col items-center justify-center cursor-pointer active:scale-95 hover:bg-slate-700 border border-slate-700 hover:border-sky-500/50 transition-all shadow-md"
+                                        >
+                                            {PresetIcon && (
+                                                <PresetIcon
+                                                    size={24}
+                                                    className={`${
+                                                        preset.text === "text-black"
+                                                            ? "text-yellow-500"
+                                                            : "text-slate-300"
+                                                    } mb-1`}
+                                                />
+                                            )}
+                                            <span className="text-[10px] font-bold text-slate-300 uppercase truncate w-full text-center px-1">
+                                                {preset.label}
+                                            </span>
+                                        </div>
+                                    );
+                                }
+                            )}
+                        </div>
                     </div>
                 </div>
             )}

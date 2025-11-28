@@ -153,7 +153,7 @@ export const PRESET_TILES = [
   // Negatif / Danger
   { label: 'NON', speak: 'Non', iconName: 'thumbs-down', color: 'red', bg: 'bg-red-600', text: 'text-white', category: 'Danger' },
   { label: 'STOP', speak: 'Stop', iconName: 'stop', color: 'red', bg: 'bg-red-600', text: 'text-white', category: 'Danger' },
-  { label: 'DOULEUR', speak: 'J'ai mal', iconName: 'pain', color: 'red', bg: 'bg-red-600', text: 'text-white', category: 'Danger' },
+  { label: 'DOULEUR', speak: "J'ai mal", iconName: 'pain', color: 'red', bg: 'bg-red-600', text: 'text-white', category: 'Danger' },
 
   // Besoins physiques
   { label: 'BOIRE', speak: 'Je veux boire', iconName: 'glass', color: 'blue', bg: 'bg-blue-600', text: 'text-white', category: 'Besoins' },
@@ -166,7 +166,7 @@ export const PRESET_TILES = [
 
   // Emotions
   { label: 'TRISTE', speak: 'Je suis triste', iconName: 'sad', color: 'rose', bg: 'bg-rose-600', text: 'text-white', category: 'Emotions' },
-  { label: 'JE T'AIME', speak: 'Je t'aime', iconName: 'heart', color: 'pink', bg: 'bg-pink-600', text: 'text-white', category: 'Emotions' },
+  { label: "JE T'AIME", speak: "Je t'aime", iconName: 'heart', color: 'pink', bg: 'bg-pink-600', text: 'text-white', category: 'Emotions' },
   { label: 'FATIGUE', speak: 'Je suis fatigue', iconName: 'bed', color: 'indigo', bg: 'bg-indigo-600', text: 'text-white', category: 'Emotions' },
 
   // Vie courante
